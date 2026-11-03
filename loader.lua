@@ -4,15 +4,27 @@ local BACKGROUND_URL = "https://raw.githubusercontent.com/BL4CK3Y/SharinganLoade
 local KEY_FILE = "sharingan_key.txt"
 local OFFLINE_MESSAGE = "Key server is offline. Try again later."
 
-local WINDOW_WIDTH, WINDOW_HEIGHT = 420, 280
+local WINDOW_WIDTH, WINDOW_HEIGHT = 400, 300
+local WINDOW_RADIUS = 14
+local FIELD_RADIUS = 9
+local FADE_TIME = 0.18
 local MAX_KEY_LENGTH = 30
+local MENU_TAB_NAME = "Sharingan Key"
+local DEFAULT_HINT = "To paste, use the " .. MENU_TAB_NAME .. " tab in Matcha's menu"
 local VK_BACKSPACE, VK_ENTER, VK_ESCAPE, VK_MINUS = 0x08, 0x0D, 0x1B, 0xBD
 
-local RED = Color3.fromRGB(200, 25, 30)
-local RED_HOVER = Color3.fromRGB(235, 45, 50)
-local BLACK = Color3.fromRGB(10, 10, 12)
-local WHITE = Color3.fromRGB(240, 240, 240)
-local GREY = Color3.fromRGB(150, 150, 155)
+local PANEL = Color3.fromRGB(14, 14, 17)
+local FIELD = Color3.fromRGB(24, 24, 29)
+local FIELD_BORDER = Color3.fromRGB(54, 54, 62)
+local ACCENT = Color3.fromRGB(190, 30, 38)
+local ACCENT_HOVER = Color3.fromRGB(216, 46, 54)
+local SHADOW = Color3.fromRGB(0, 0, 0)
+local TEXT = Color3.fromRGB(238, 238, 242)
+local MUTED = Color3.fromRGB(142, 142, 152)
+local ERROR_TEXT = Color3.fromRGB(238, 104, 104)
+
+local FONT_REGULAR = Drawing.Fonts.System
+local FONT_BOLD = Drawing.Fonts.SystemBold
 
 local HttpService = game:GetService("HttpService")
 
@@ -102,41 +114,63 @@ local function askForKey(startMessage)
     end)
     local left = math.floor((screenWidth - WINDOW_WIDTH) / 2)
     local top = math.floor((screenHeight - WINDOW_HEIGHT) / 2)
+    local centerX = left + WINDOW_WIDTH / 2
 
     local drawings = {}
     local zIndex = 100000
-    local function draw(kind, properties)
+    local function draw(kind, properties, opacity)
         local drawing = Drawing.new(kind)
         zIndex = zIndex + 1
         properties.ZIndex = zIndex
         properties.Visible = true
-        properties.Transparency = 1
+        properties.Transparency = 0
         -- Each one is separate so one unsupported property can't lose the rest
         for name, value in pairs(properties) do
             pcall(function()
                 drawing[name] = value
             end)
         end
-        drawings[#drawings + 1] = drawing
+        drawings[#drawings + 1] = { drawing = drawing, opacity = opacity or 1 }
         return drawing
     end
 
-    local function drawText(text, y, size, color)
-        return draw("Text", { Text = text, Position = Vector2.new(left, top + y), Size = size, Color = color, Outline = true })
+    local function drawBox(x, y, width, height, color, radius, opacity)
+        return draw("Square", {
+            Position = Vector2.new(x, y),
+            Size = Vector2.new(width, height),
+            Color = color,
+            Filled = true,
+            Corner = radius,
+        }, opacity)
     end
 
-    -- Drawing text has no centering, so this uses an estimated character width
-    local function centerText(drawing, text, y, size)
-        drawing.Text = text
-        drawing.Position = Vector2.new(left + (WINDOW_WIDTH - #text * size * 0.52) / 2, top + y)
+    local function drawOutline(x, y, width, height, color, radius)
+        return draw("Square", {
+            Position = Vector2.new(x, y),
+            Size = Vector2.new(width, height),
+            Color = color,
+            Filled = false,
+            Thickness = 1,
+            Corner = radius,
+        })
     end
 
-    draw("Square", {
-        Position = Vector2.new(left, top),
-        Size = Vector2.new(WINDOW_WIDTH, WINDOW_HEIGHT),
-        Color = BLACK,
-        Filled = true,
-    })
+    local function drawText(text, x, y, size, color, font, centered)
+        return draw("Text", {
+            Text = text,
+            Position = Vector2.new(x, y),
+            FontSize = size,
+            Color = color,
+            Font = font,
+            Center = centered,
+        })
+    end
+
+    -- Soft shadow, from widest and faintest to tightest
+    for _, spread in ipairs({ 16, 11, 7, 3 }) do
+        drawBox(left - spread, top - spread + 4, WINDOW_WIDTH + spread * 2, WINDOW_HEIGHT + spread * 2, SHADOW, WINDOW_RADIUS + spread, 0.09)
+    end
+    drawBox(left, top, WINDOW_WIDTH, WINDOW_HEIGHT, PANEL, WINDOW_RADIUS)
 
     -- The window still works if the image can't load
     pcall(function()
@@ -145,52 +179,34 @@ local function askForKey(startMessage)
             Data = image,
             Position = Vector2.new(left, top),
             Size = Vector2.new(WINDOW_WIDTH, WINDOW_HEIGHT),
+            Rounding = WINDOW_RADIUS,
         })
     end)
+    drawOutline(left, top, WINDOW_WIDTH, WINDOW_HEIGHT, FIELD_BORDER, WINDOW_RADIUS)
 
-    draw("Square", {
-        Position = Vector2.new(left, top),
-        Size = Vector2.new(WINDOW_WIDTH, WINDOW_HEIGHT),
-        Color = RED,
-        Filled = false,
-        Thickness = 1,
-    })
+    drawText("Sharingan AP", centerX, top + 112, 20, TEXT, FONT_BOLD, true)
+    drawText("Enter your license key to continue", centerX, top + 139, 13, MUTED, FONT_REGULAR, true)
 
-    local titleText = drawText("", 24, 24, WHITE)
-    centerText(titleText, "ENTER YOUR KEY", 24, 24)
+    local inputX, inputY, inputWidth, inputHeight = left + 40, top + 168, WINDOW_WIDTH - 80, 40
+    local buttonX, buttonY, buttonWidth, buttonHeight = inputX, top + 218, inputWidth, 40
 
-    local inputX, inputY, inputWidth, inputHeight = left + 60, top + 165, WINDOW_WIDTH - 120, 36
-    local buttonX, buttonY, buttonWidth, buttonHeight = inputX, top + 209, inputWidth, 34
+    drawBox(inputX, inputY, inputWidth, inputHeight, FIELD, FIELD_RADIUS)
+    local inputBorder = drawOutline(inputX, inputY, inputWidth, inputHeight, FIELD_BORDER, FIELD_RADIUS)
+    local keyText = drawText("", inputX + 14, inputY + 11, 15, MUTED, FONT_BOLD, false)
 
-    draw("Square", {
-        Position = Vector2.new(inputX, inputY),
-        Size = Vector2.new(inputWidth, inputHeight),
-        Color = BLACK,
-        Filled = true,
-    })
-    local inputBorder = draw("Square", {
-        Position = Vector2.new(inputX, inputY),
-        Size = Vector2.new(inputWidth, inputHeight),
-        Color = RED,
-        Filled = false,
-        Thickness = 1,
-    })
-    local keyText = drawText("", 174, 16, WHITE)
+    local button = drawBox(buttonX, buttonY, buttonWidth, buttonHeight, ACCENT, FIELD_RADIUS)
+    drawText("Submit", centerX, buttonY + 11, 15, TEXT, FONT_BOLD, true)
 
-    local button = draw("Square", {
-        Position = Vector2.new(buttonX, buttonY),
-        Size = Vector2.new(buttonWidth, buttonHeight),
-        Color = RED,
-        Filled = true,
-    })
-    local buttonText = drawText("", 217, 16, WHITE)
-    centerText(buttonText, "SUBMIT", 217, 16)
-
-    local statusText = drawText("", 252, 14, GREY)
-    local function setStatus(message)
-        centerText(statusText, message, 252, 14)
+    local statusText = drawText("", centerX, top + 270, 12, MUTED, FONT_REGULAR, true)
+    local function setStatus(message, color)
+        statusText.Text = message
+        statusText.Color = color or MUTED
     end
-    setStatus(startMessage or "")
+    if startMessage then
+        setStatus(startMessage, ERROR_TEXT)
+    else
+        setStatus(DEFAULT_HINT)
+    end
 
     local mouse = game:GetService("Players").LocalPlayer:GetMouse()
     local function isHovering(x, y, width, height)
@@ -198,6 +214,7 @@ local function askForKey(startMessage)
     end
 
     local typedKey = ""
+    local pastedKey = nil
     local focused = true
     local checking = false
     local closed = false
@@ -205,6 +222,16 @@ local function askForKey(startMessage)
     local heldKeys = {}
     local backspaceRepeatAt = 0
     local mouseWasDown = false
+
+    -- Matcha has no clipboard read, so paste relies on its menu's own text field
+    pcall(function()
+        UI.AddTab(MENU_TAB_NAME, function(tab)
+            local section = tab:Section("License", "Left")
+            section:InputText("sharingan_license_key", "Paste key, then click away", "", function(text)
+                pastedKey = text
+            end)
+        end)
+    end)
 
     local function wasPressed(keyCode)
         local down = iskeypressed(keyCode) == true
@@ -216,7 +243,7 @@ local function askForKey(startMessage)
     local function submit()
         if checking then return end
         if typedKey == "" then
-            setStatus("Enter your key first")
+            setStatus("Enter your key first", ERROR_TEXT)
             return
         end
 
@@ -229,7 +256,7 @@ local function askForKey(startMessage)
                 setStatus("Loading...")
                 source = payload
             else
-                setStatus(payload)
+                setStatus(payload, ERROR_TEXT)
                 checking = false
             end
         end)
@@ -264,9 +291,26 @@ local function askForKey(startMessage)
         end
     end
 
+    local openedAt = tick()
+    local faded = false
+
     setGameInput(false)
     repeat
         task.wait()
+
+        if not faded then
+            local progress = math.min((tick() - openedAt) / FADE_TIME, 1)
+            for _, entry in ipairs(drawings) do
+                entry.drawing.Transparency = entry.opacity * progress
+            end
+            faded = progress >= 1
+        end
+
+        if pastedKey and not checking then
+            typedKey = string.sub(string.upper((string.gsub(pastedKey, "%s", ""))), 1, MAX_KEY_LENGTH)
+            pastedKey = nil
+            submit()
+        end
 
         if isWindowActive() then
             if wasPressed(VK_ESCAPE) then
@@ -286,24 +330,32 @@ local function askForKey(startMessage)
                 setGameInput(not focused)
             end
             mouseWasDown = mouseDown
-            button.Color = overButton and RED_HOVER or RED
+            button.Color = overButton and ACCENT_HOVER or ACCENT
 
             if focused and not checking then
                 readTyping()
             end
         end
 
-        inputBorder.Color = focused and RED_HOVER or RED
-        local cursor = (focused and not checking and tick() % 1 < 0.5) and "_" or ""
-        keyText.Text = typedKey .. cursor
-        keyText.Position = Vector2.new(left + (WINDOW_WIDTH - #typedKey * 16 * 0.52) / 2, top + 174)
+        inputBorder.Color = focused and ACCENT or FIELD_BORDER
+        if typedKey == "" then
+            keyText.Text = "Your license key"
+            keyText.Color = MUTED
+        else
+            local cursor = (focused and not checking and tick() % 1 < 0.5) and "|" or ""
+            keyText.Text = typedKey .. cursor
+            keyText.Color = TEXT
+        end
     until source or closed
 
+    pcall(function()
+        UI.RemoveTab(MENU_TAB_NAME)
+    end)
     setGameInput(true)
-    for _, drawing in ipairs(drawings) do
+    for _, entry in ipairs(drawings) do
         pcall(function()
-            drawing.Visible = false
-            drawing:Remove()
+            entry.drawing.Visible = false
+            entry.drawing:Remove()
         end)
     end
     return source
