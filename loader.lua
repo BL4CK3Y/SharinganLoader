@@ -4,7 +4,7 @@ local BACKGROUND_URL = "https://raw.githubusercontent.com/BL4CK3Y/SharinganLoade
 local KEY_FILE = "sharingan_key.txt"
 local OFFLINE_MESSAGE = "Key server is offline. Try again later."
 
-local WINDOW_WIDTH, WINDOW_HEIGHT = 400, 310
+local WINDOW_WIDTH, WINDOW_HEIGHT = 400, 250
 local WINDOW_RADIUS = 14
 local FIELD_RADIUS = 9
 local FADE_TIME = 0.18
@@ -16,7 +16,6 @@ local PANEL = Color3.fromRGB(14, 14, 17)
 local FIELD = Color3.fromRGB(24, 24, 29)
 local FIELD_BORDER = Color3.fromRGB(54, 54, 62)
 local ACCENT = Color3.fromRGB(190, 30, 38)
-local ACCENT_HOVER = Color3.fromRGB(216, 46, 54)
 local SHADOW = Color3.fromRGB(0, 0, 0)
 local TEXT = Color3.fromRGB(238, 238, 242)
 local MUTED = Color3.fromRGB(142, 142, 152)
@@ -188,18 +187,14 @@ local function askForKey(startMessage)
     drawOutline(left, top, WINDOW_WIDTH, WINDOW_HEIGHT, FIELD_BORDER, WINDOW_RADIUS)
 
     drawText("Sharingan AP", centerX, top + 118, 26, TEXT, FONT_BOLD, true)
-    -- Doubles as the status line, so nothing sits under the button
-    local statusText = drawText("Enter your license key to continue", centerX, top + 150, 14, MUTED, FONT_REGULAR, true)
+    -- Doubles as the status line
+    local statusText = drawText("Type your key and press Enter", centerX, top + 150, 14, MUTED, FONT_REGULAR, true)
 
     local inputX, inputY, inputWidth, inputHeight = left + 40, top + 178, WINDOW_WIDTH - 80, 44
-    local buttonX, buttonY, buttonWidth, buttonHeight = inputX, top + 234, inputWidth, 44
 
     drawBox(inputX, inputY, inputWidth, inputHeight, FIELD, FIELD_RADIUS)
     local inputBorder = drawOutline(inputX, inputY, inputWidth, inputHeight, FIELD_BORDER, FIELD_RADIUS)
     local keyText = drawText("", inputX + 14, inputY + 12, 16, MUTED, FONT_BOLD, false)
-
-    local button = drawBox(buttonX, buttonY, buttonWidth, buttonHeight, ACCENT, FIELD_RADIUS)
-    drawText("Submit", centerX, buttonY + buttonHeight / 2, 18, TEXT, FONT_BOLD, true)
 
     local function setStatus(message, color)
         statusText.Text = message
@@ -319,19 +314,11 @@ local function askForKey(startMessage)
             end
 
             local mouseDown = ismouse1pressed() == true
-            local overButton = isHovering(buttonX, buttonY, buttonWidth, buttonHeight)
             if mouseDown and not mouseWasDown then
-                if overButton then
-                    submit()
-                elseif isHovering(inputX, inputY, inputWidth, inputHeight) then
-                    focused = true
-                else
-                    focused = false
-                end
+                focused = isHovering(inputX, inputY, inputWidth, inputHeight)
                 setGameInput(not focused)
             end
             mouseWasDown = mouseDown
-            button.Color = overButton and ACCENT_HOVER or ACCENT
 
             if focused and not checking then
                 readTyping()
