@@ -4,13 +4,12 @@ local BACKGROUND_URL = "https://raw.githubusercontent.com/BL4CK3Y/SharinganLoade
 local KEY_FILE = "sharingan_key.txt"
 local OFFLINE_MESSAGE = "Key server is offline. Try again later."
 
-local WINDOW_WIDTH, WINDOW_HEIGHT = 400, 300
+local WINDOW_WIDTH, WINDOW_HEIGHT = 400, 310
 local WINDOW_RADIUS = 14
 local FIELD_RADIUS = 9
 local FADE_TIME = 0.18
 local MAX_KEY_LENGTH = 30
 local MENU_TAB_NAME = "Sharingan Key"
-local DEFAULT_HINT = "To paste, use the " .. MENU_TAB_NAME .. " tab in Matcha's menu"
 local VK_BACKSPACE, VK_ENTER, VK_ESCAPE, VK_MINUS = 0x08, 0x0D, 0x1B, 0xBD
 
 local PANEL = Color3.fromRGB(14, 14, 17)
@@ -159,6 +158,8 @@ local function askForKey(startMessage)
         return draw("Text", {
             Text = text,
             Position = Vector2.new(x, y),
+            -- Text stayed small in Matcha with only the documented FontSize
+            Size = size,
             FontSize = size,
             Color = color,
             Font = font,
@@ -184,28 +185,26 @@ local function askForKey(startMessage)
     end)
     drawOutline(left, top, WINDOW_WIDTH, WINDOW_HEIGHT, FIELD_BORDER, WINDOW_RADIUS)
 
-    drawText("Sharingan AP", centerX, top + 112, 20, TEXT, FONT_BOLD, true)
-    drawText("Enter your license key to continue", centerX, top + 139, 13, MUTED, FONT_REGULAR, true)
+    drawText("Sharingan AP", centerX, top + 106, 26, TEXT, FONT_BOLD, true)
+    -- Doubles as the status line, so nothing sits under the button
+    local statusText = drawText("Enter your license key to continue", centerX, top + 141, 14, MUTED, FONT_REGULAR, true)
 
-    local inputX, inputY, inputWidth, inputHeight = left + 40, top + 168, WINDOW_WIDTH - 80, 40
-    local buttonX, buttonY, buttonWidth, buttonHeight = inputX, top + 218, inputWidth, 40
+    local inputX, inputY, inputWidth, inputHeight = left + 40, top + 178, WINDOW_WIDTH - 80, 44
+    local buttonX, buttonY, buttonWidth, buttonHeight = inputX, top + 234, inputWidth, 44
 
     drawBox(inputX, inputY, inputWidth, inputHeight, FIELD, FIELD_RADIUS)
     local inputBorder = drawOutline(inputX, inputY, inputWidth, inputHeight, FIELD_BORDER, FIELD_RADIUS)
-    local keyText = drawText("", inputX + 14, inputY + 11, 15, MUTED, FONT_BOLD, false)
+    local keyText = drawText("", inputX + 14, inputY + 12, 16, MUTED, FONT_BOLD, false)
 
     local button = drawBox(buttonX, buttonY, buttonWidth, buttonHeight, ACCENT, FIELD_RADIUS)
-    drawText("Submit", centerX, buttonY + 11, 15, TEXT, FONT_BOLD, true)
+    drawText("Submit", centerX, buttonY + 11, 18, TEXT, FONT_BOLD, true)
 
-    local statusText = drawText("", centerX, top + 270, 12, MUTED, FONT_REGULAR, true)
     local function setStatus(message, color)
         statusText.Text = message
         statusText.Color = color or MUTED
     end
     if startMessage then
         setStatus(startMessage, ERROR_TEXT)
-    else
-        setStatus(DEFAULT_HINT)
     end
 
     local mouse = game:GetService("Players").LocalPlayer:GetMouse()
