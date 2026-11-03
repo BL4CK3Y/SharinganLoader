@@ -154,6 +154,7 @@ local function askForKey(startMessage)
         })
     end
 
+    -- With Center on, Matcha centers the text on y as well as x, so y is its middle
     local function drawText(text, x, y, size, color, font, centered)
         return draw("Text", {
             Text = text,
@@ -164,6 +165,7 @@ local function askForKey(startMessage)
             Color = color,
             Font = font,
             Center = centered,
+            Outline = false,
         })
     end
 
@@ -185,9 +187,9 @@ local function askForKey(startMessage)
     end)
     drawOutline(left, top, WINDOW_WIDTH, WINDOW_HEIGHT, FIELD_BORDER, WINDOW_RADIUS)
 
-    drawText("Sharingan AP", centerX, top + 106, 26, TEXT, FONT_BOLD, true)
+    drawText("Sharingan AP", centerX, top + 118, 26, TEXT, FONT_BOLD, true)
     -- Doubles as the status line, so nothing sits under the button
-    local statusText = drawText("Enter your license key to continue", centerX, top + 141, 14, MUTED, FONT_REGULAR, true)
+    local statusText = drawText("Enter your license key to continue", centerX, top + 150, 14, MUTED, FONT_REGULAR, true)
 
     local inputX, inputY, inputWidth, inputHeight = left + 40, top + 178, WINDOW_WIDTH - 80, 44
     local buttonX, buttonY, buttonWidth, buttonHeight = inputX, top + 234, inputWidth, 44
@@ -197,7 +199,7 @@ local function askForKey(startMessage)
     local keyText = drawText("", inputX + 14, inputY + 12, 16, MUTED, FONT_BOLD, false)
 
     local button = drawBox(buttonX, buttonY, buttonWidth, buttonHeight, ACCENT, FIELD_RADIUS)
-    drawText("Submit", centerX, buttonY + 11, 18, TEXT, FONT_BOLD, true)
+    drawText("Submit", centerX, buttonY + buttonHeight / 2, 18, TEXT, FONT_BOLD, true)
 
     local function setStatus(message, color)
         statusText.Text = message
