@@ -353,6 +353,10 @@ local function startFromWindow(startMessage)
     local source = askForKey(startMessage)
     if source then
         runScript(source)
+        -- This thread has yielded, so threads it spawned appear to stop once it ends
+        while true do
+            task.wait(1)
+        end
     end
 end
 
